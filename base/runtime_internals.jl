@@ -23,17 +23,20 @@ parentmodule(m::Module) = (@_total_meta; ccall(:jl_module_parent, Ref{Module}, (
 is_root_module(m::Module) = parentmodule(m) === m || m === Compiler || (isdefined(Main, :Base) && m === Main.Base)
 
 """
-    moduleroot(m::Module) -> Module
+    moduleroot(m::Module, root_if_parent_is_main::Bool=false) -> Module
 
 Find the root module of a given module. This is the first module in the chain of
 parent modules of `m` which is either a registered root module or which is its
-own parent module.
+own parent module. If ` root_if_parent_is_main` is set, a module with the parent module
+`Main` is also considered a root module.
 """
-function moduleroot(m::Module)
-    @_total_meta
+function moduleroot(m::Module, root_if_parent_is_main::Bool=false)
     while true
         is_root_module(m) && return m
         p = parentmodule(m)
+        if root_if_parent_is_main && p === Main
+            return m
+        end
         p === m && return m
         m = p
     end
